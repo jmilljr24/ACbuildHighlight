@@ -13,8 +13,9 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     super()
     # @text_list_arr = text_list
     @canvas = page.canvas(type: :overlay)
-    @parts = %w[VANS F1006C F1012A F1006D F1006B F1032L F1011C F1029L F1010C F1010A F1011E F1012E F1010C F1010 F1011 F1011A
-                F1010CR F1010CL F1007L]
+    @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
+                F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
+                F-1010C-R F-1010C-L F-1007-L]
     @colors = %w[cyan darkgreen gold deeppink olivedrab paleturquoise red green blue orange]
     @color_key = color_key
     @prev_parts = prev_parts
@@ -28,7 +29,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
 
   def show_text(str)
     begin
-      part = str.scan(/\w+/).join # Converts utf-8 str to text string
+      p part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
     rescue StandardError
       puts 'invalid string'
     end
