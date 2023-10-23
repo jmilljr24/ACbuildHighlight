@@ -23,7 +23,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     @color_key['Page Number'] = @page_number
   end
 
-  def show_text(str)
+  def show_text(str) # rubocop:disable Metrics/CyclomaticComplexity
     begin
       part = str.scan(/\w+/).join # Converts utf-8 str to text string
     rescue StandardError
