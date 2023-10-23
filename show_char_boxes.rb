@@ -12,20 +12,20 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     super()
     # @text_list_arr = text_list
     @canvas = page.canvas(type: :overlay)
-    @parts = %w[F1006C F1012A F1006D F1006B F1032L F1011C F1029L F1010C F1010A F1011E F1012E F1010C F1010 F1011 F1011A
+    @parts = %w[VANS F1006C F1012A F1006D F1006B F1032L F1011C F1029L F1010C F1010A F1011E F1012E F1010C F1010 F1011 F1011A
                 F1010CR F1010CL F1007L]
-    @colors = %w[violet yellow maroon brown cyan darkgreen darkred gold deeppink olivedrab paleturquoise red green blue
-                 orange]
+    @colors = %w[cyan darkgreen gold deeppink olivedrab paleturquoise red green blue orange]
     @color_key = color_key
     @prev_parts = prev_parts
     @prev_color = prev_color
     @page_number = page_number
     @color_key['Page Number'] = @page_number
+    @used_colors = []
   end
 
   def show_text(str) # rubocop:disable Metrics/CyclomaticComplexity
     begin
-      part = str.scan(/\w+/).join # Converts utf-8 str to text string
+      p part = str.scan(/\w+/).join # Converts utf-8 str to text string
     rescue StandardError
       puts 'invalid string'
     end
@@ -58,7 +58,12 @@ class ShowTextProcessor < HexaPDF::Content::Processor
   def key_color(part, str)
     # color = @colors.pop
     n = @color_key.values
-    p color = (@colors - n).sample
+    n.each_with_index do |color, index|
+      next if index == 0
+
+      @used_colors << color[0]
+    end
+    color = @used_colors.empty? ? @colors.sample : (@colors - @used_colors).sample
     @color_key[part] = [color, str]
   end
   alias show_text_with_positioning show_text
@@ -66,18 +71,12 @@ end
 @prev_color = nil
 @color_key = nil
 @prev_parts = nil
-doc = HexaPDF::Document.open(ARGV.shift)
+# doc = HexaPDF::Document.open(ARGV.shift)
+doc = HexaPDF::Document.open('ocr.pdf')
+
 doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"
-  unless @prev_color.nil?
-    @prev_parts = @prev_color.keys
-    # @prev_color.each do |_key, _value|
-    #   parts.each do |part|
-    #     p part
-    #     p @prev_color[part] # = @prev_color[part]
-    #   end
-    # end
-  end
+  @prev_parts = @prev_color.keys unless @prev_color.nil?
   processor = ShowTextProcessor.new(page, index, @prev_parts, @prev_color)
   # binding.pry
   page.process_contents(processor)
