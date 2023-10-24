@@ -4,12 +4,13 @@
 #
 require 'pry-byebug'
 require 'hexapdf'
+require_relative 'find_text'
 
 class ShowTextProcessor < HexaPDF::Content::Processor
   attr_accessor :page_number, :color_key, :prev_parts, :prev_color
-  attr_reader :boxes, :current_page_parts
+  attr_reader :boxes, :current_page_parts, :page_parts
 
-  def initialize(page, page_number, prev_parts, prev_color = nil, color_key = {})
+  def initialize(page, page_number, prev_parts, prev_color, page_parts)
     super()
     # @text_list_arr = text_list
     @canvas = page.canvas(type: :overlay)
@@ -17,6 +18,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
                 F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
                 F-1010C-R F-1010C-L F-1007-L]
     @colors = %w[cyan darkgreen gold deeppink olivedrab paleturquoise red green blue orange]
+    @color_key = {}
     @color_key = color_key
     @prev_parts = prev_parts
     @prev_color = prev_color
@@ -24,6 +26,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     @color_key['Page Number'] = @page_number
     @used_colors = []
     @boxes = []
+    @page_parts = page_parts
     @current_page_parts = []
   end
 
@@ -43,6 +46,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     if @prev_parts&.include?(part)
       @color_key[part] = @prev_color.delete(part)
       @prev_parts.delete(part)
+      @used_colors << @color_key.dig(part, 0)
     else
       key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
     end
@@ -103,8 +107,10 @@ doc = HexaPDF::Document.open('ocr.pdf')
 
 doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"
-  # @prev_parts = @prev_color.keys unless @prev_color.nil?
-  processor = ShowTextProcessor.new(page, index, @prev_parts, @prev_color)
+  processor = FindTextProcessor.new(page)
+  page.process_contents(processor)
+  page_text = processor.page_text
+  processor = ShowTextProcessor.new(page, index, @prev_parts, @prev_color, page_text)
   page.process_contents(processor)
   processor.text_highlight
   @prev_color&.clear #  clear if not nil
