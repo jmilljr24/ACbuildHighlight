@@ -36,7 +36,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     rescue StandardError
       puts 'invalid string'
     end
-    return unless @parts.include?(part) # do nothing if part is not on current page
+    return unless @page_parts.include?(part) # do nothing if part is not on current page
 
     @current_page_parts << part
 
@@ -109,8 +109,8 @@ doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"
   processor = FindTextProcessor.new(page)
   page.process_contents(processor)
-  page_text = processor.page_text
-  processor = ShowTextProcessor.new(page, index, @prev_parts, @prev_color, page_text)
+  page_parts = processor.page_parts
+  processor = ShowTextProcessor.new(page, index, @prev_parts, @prev_color, page_parts)
   page.process_contents(processor)
   processor.text_highlight
   @prev_color&.clear #  clear if not nil

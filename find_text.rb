@@ -16,7 +16,7 @@
 require 'hexapdf'
 
 class FindTextProcessor < HexaPDF::Content::Processor
-  attr_accessor :page_text
+  attr_accessor :page_parts
 
   def initialize(page)
     super()
@@ -24,7 +24,7 @@ class FindTextProcessor < HexaPDF::Content::Processor
     @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
                 F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
                 F-1010C-R F-1010C-L F-1007-L]
-    @page_text = []
+    @page_parts = []
   end
 
   def show_text(str)
@@ -35,7 +35,7 @@ class FindTextProcessor < HexaPDF::Content::Processor
     end
     return unless @parts.include?(part) # do nothing if part is not on current page
 
-    @page_text << part
+    @page_parts << part
     # @canvas.line_width = 1
     # @canvas.stroke_color(224, 0, 0)
     # # Polyline for transformed characters
