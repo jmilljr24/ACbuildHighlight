@@ -1,6 +1,6 @@
 # ACbuildHighlight
 
-https://github.com/gettalong/hexapdf.git
+https://github.com/gettalong/hexapdf
 
 Using Hexapdf to scan Aircraft build files for part numbers. Each page is
 scanned and part numbers are given unique colored highlights to correspond the
