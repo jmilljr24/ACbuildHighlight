@@ -32,7 +32,8 @@ class ShowTextProcessor < HexaPDF::Content::Processor
 
   def show_text(str)
     begin
-      part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
+      # part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
+      part = str.select.with_index { |_, i| i.even? }.join
     rescue StandardError
       nil
     end
