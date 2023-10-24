@@ -12,7 +12,6 @@ class ShowTextProcessor < HexaPDF::Content::Processor
 
   def initialize(page, page_number, prev_parts, page_parts)
     super()
-    # @text_list_arr = text_list
     @canvas = page.canvas(type: :overlay)
     @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
                 F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
@@ -21,10 +20,8 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     @color_key = {}
     @color_key = color_key
     @prev_parts = prev_parts
-    # @prev_color = prev_color
     @page_number = page_number
     @color_key['Page Number'] = @page_number
-    # @used_colors = []
     @boxes = []
     @page_parts = page_parts
     @current_page_parts = []
@@ -38,44 +35,11 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     end
     return unless @page_parts.include?(part) # do nothing if part is not on current page
 
-    # @current_page_parts << part
-
-    # check if part was on previous page
-    # @color_key[part] = @prev_color.delete(part) if !@prev_parts.nil? or @prev_parts.include?(part)
-
-    # if @prev_parts&.include?(part)
-    #   @color_key[part] = @prev_color.delete(part)
-    #   @prev_parts.delete(part)
-    #   @used_colors << @color_key.dig(part, 0)
-    #     both_pages = @prev_parts & @page_parts
-    #     until both_pages == false || both_pages.empty?
-    #       both_pages.each_with_index do |b, i|
-    #         @color_key[b] = @prev_color[b]
-    #         @used_colors << @color_key.dig(b, 0)
-    #         if i == 2
-    #           both_pages.clear
-    #           @prev_parts.clear
-    #         end
-    #       end
-    #     end
-    #     if both_pages == true && both_pages&.include?(part)
-    #       @color_key[part] = @prev_color.delete(part)
-    #       both_pages.delete(part)
-    #       @used_colors << @color_key.dig(part, 0)
-    #     else
-    #       key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
-    #     end
     unless @color_key.key?(part)
       key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
     end
     @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
     # return if @boxes.string.empty?
-
-    # begin
-    #   box_fill(@boxes, @color_key.dig(part, 0))
-    # rescue StandardError
-    #   box_fill(@boxes, 'yellow') # set yellow if all colors used already
-    # end
   end
 
   def box_fill(boxes, color)
@@ -88,7 +52,6 @@ class ShowTextProcessor < HexaPDF::Content::Processor
   end
 
   def key_color(part, str)
-    # color = @colors.pop
     n = @color_key.values
     n.each_with_index do |color, index|
       next if index == 0
@@ -132,7 +95,7 @@ doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
   processor = FindTextProcessor.new(page)
   page.process_contents(processor)
   page_parts = processor.page_parts
-  p both_pages = @prev_parts & page_parts
+  both_pages = @prev_parts & page_parts
   until both_pages == false || both_pages.empty?
     both_pages.each_with_index do |b, i|
       @color_key[b] = @prev_color[b]
@@ -154,6 +117,5 @@ doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
   @used_colors.clear
   @color_key.clear
   @prev_parts = processor.page_parts.uniq
-  # @color_key = processor.color_key
 end
 doc.write('show_char_boxes.pdf', optimize: true)
