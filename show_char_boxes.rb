@@ -38,18 +38,34 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     end
     return unless @page_parts.include?(part) # do nothing if part is not on current page
 
-    @current_page_parts << part
+    # @current_page_parts << part
 
     # check if part was on previous page
     # @color_key[part] = @prev_color.delete(part) if !@prev_parts.nil? or @prev_parts.include?(part)
 
-    if @prev_parts&.include?(part)
-      @color_key[part] = @prev_color.delete(part)
-      @prev_parts.delete(part)
-      @used_colors << @color_key.dig(part, 0)
-    else
-      key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
+    # if @prev_parts&.include?(part)
+    #   @color_key[part] = @prev_color.delete(part)
+    #   @prev_parts.delete(part)
+    #   @used_colors << @color_key.dig(part, 0)
+    both_pages = @prev_parts & @page_parts
+    until both_pages == false || both_pages.empty?
+      both_pages.each_with_index do |b, i|
+        @color_key[b] = @prev_color[b]
+        @used_colors << @color_key.dig(b, 0)
+        if i == 2
+          both_pages.clear
+          @prev_parts.clear
+        end
+      end
     end
+    #     if both_pages == true && both_pages&.include?(part)
+    #       @color_key[part] = @prev_color.delete(part)
+    #       both_pages.delete(part)
+    #       @used_colors << @color_key.dig(part, 0)
+    #     else
+    #       key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
+    #     end
+    key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
 
     @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
     # return if @boxes.string.empty?
@@ -116,6 +132,6 @@ doc.pages.each_with_index do |page, index|
   @prev_color&.clear #  clear if not nil
   @prev_color = processor.color_key
   @prev_parts&.clear
-  p @prev_parts = processor.current_page_parts.uniq
+  p @prev_parts = processor.page_parts.uniq
 end
 doc.write('show_char_boxes.pdf', optimize: true)
