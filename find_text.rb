@@ -15,8 +15,8 @@ class FindTextProcessor < HexaPDF::Content::Processor
   def show_text(str)
     begin
       part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
-    rescue StandardError
-      puts 'invalid string'
+    rescue
+      nil
     end
     return unless @parts.include?(part) # do nothing if part is not on current page
 

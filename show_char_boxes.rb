@@ -5,17 +5,20 @@
 require 'pry-byebug'
 require 'hexapdf'
 require_relative 'find_text'
+require_relative 'parts_list'
 
 class ShowTextProcessor < HexaPDF::Content::Processor
+  include SectionParts
   attr_accessor :page_number, :color_key, :prev_parts, :prev_color, :used_colors
   attr_reader :boxes, :current_page_parts, :page_parts
 
   def initialize(page, page_number, prev_parts, page_parts)
     super()
     @canvas = page.canvas(type: :overlay)
-    @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
-                F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
-                F-1010C-R F-1010C-L F-1007-L]
+    # @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
+    #             F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
+    #             F-1010C-R F-1010C-L F-1007-L]
+    @parts = getParts
     @colors = %w[cyan darkgreen gold deeppink olivedrab paleturquoise red green blue orange]
     @color_key = {}
     @color_key = color_key
@@ -31,7 +34,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     begin
       part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
     rescue StandardError
-      puts 'invalid string'
+      nil
     end
     return unless @page_parts.include?(part) # do nothing if part is not on current page
 
@@ -88,7 +91,7 @@ def deep_copy(o) # copy hash
   Marshal.load(Marshal.dump(o))
 end
 # doc = HexaPDF::Document.open(ARGV.shift)
-doc = HexaPDF::Document.open('ocr.pdf')
+doc = HexaPDF::Document.open('06_10.pdf')
 
 doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
   puts "Processing page #{index + 1}"
