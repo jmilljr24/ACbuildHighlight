@@ -7,10 +7,10 @@ require 'hexapdf'
 require_relative 'find_text'
 
 class ShowTextProcessor < HexaPDF::Content::Processor
-  attr_accessor :page_number, :color_key, :prev_parts, :prev_color
+  attr_accessor :page_number, :color_key, :prev_parts, :prev_color, :used_colors
   attr_reader :boxes, :current_page_parts, :page_parts
 
-  def initialize(page, page_number, prev_parts, prev_color, page_parts)
+  def initialize(page, page_number, prev_parts, page_parts)
     super()
     # @text_list_arr = text_list
     @canvas = page.canvas(type: :overlay)
@@ -21,10 +21,10 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     @color_key = {}
     @color_key = color_key
     @prev_parts = prev_parts
-    @prev_color = prev_color
+    # @prev_color = prev_color
     @page_number = page_number
     @color_key['Page Number'] = @page_number
-    @used_colors = []
+    # @used_colors = []
     @boxes = []
     @page_parts = page_parts
     @current_page_parts = []
@@ -47,17 +47,17 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     #   @color_key[part] = @prev_color.delete(part)
     #   @prev_parts.delete(part)
     #   @used_colors << @color_key.dig(part, 0)
-    both_pages = @prev_parts & @page_parts
-    until both_pages == false || both_pages.empty?
-      both_pages.each_with_index do |b, i|
-        @color_key[b] = @prev_color[b]
-        @used_colors << @color_key.dig(b, 0)
-        if i == 2
-          both_pages.clear
-          @prev_parts.clear
-        end
-      end
-    end
+    #     both_pages = @prev_parts & @page_parts
+    #     until both_pages == false || both_pages.empty?
+    #       both_pages.each_with_index do |b, i|
+    #         @color_key[b] = @prev_color[b]
+    #         @used_colors << @color_key.dig(b, 0)
+    #         if i == 2
+    #           both_pages.clear
+    #           @prev_parts.clear
+    #         end
+    #       end
+    #     end
     #     if both_pages == true && both_pages&.include?(part)
     #       @color_key[part] = @prev_color.delete(part)
     #       both_pages.delete(part)
@@ -65,8 +65,9 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     #     else
     #       key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
     #     end
-    key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
-
+    unless @color_key.key?(part)
+      key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
+    end
     @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
     # return if @boxes.string.empty?
 
@@ -116,22 +117,43 @@ class ShowTextProcessor < HexaPDF::Content::Processor
   alias show_text_with_positioning show_text
 end
 @prev_color = nil
-@color_key = nil
+@color_key = {}
 @prev_parts = nil
+@used_colors = []
+
+def deep_copy(o) # copy hash
+  Marshal.load(Marshal.dump(o))
+end
 # doc = HexaPDF::Document.open(ARGV.shift)
 doc = HexaPDF::Document.open('ocr.pdf')
 
-doc.pages.each_with_index do |page, index|
+doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
   puts "Processing page #{index + 1}"
   processor = FindTextProcessor.new(page)
   page.process_contents(processor)
   page_parts = processor.page_parts
-  processor = ShowTextProcessor.new(page, index, @prev_parts, @prev_color, page_parts)
+  p both_pages = @prev_parts & page_parts
+  until both_pages == false || both_pages.empty?
+    both_pages.each_with_index do |b, i|
+      @color_key[b] = @prev_color[b]
+      @used_colors << @color_key.dig(b, 0)
+      if i == both_pages.count - 1
+        both_pages.clear
+        @prev_parts.clear
+      end
+    end
+  end
+  processor = ShowTextProcessor.new(page, index, @prev_parts, page_parts)
+  processor.used_colors = @used_colors
+  processor.color_key = @color_key
   page.process_contents(processor)
   processor.text_highlight
   @prev_color&.clear #  clear if not nil
-  @prev_color = processor.color_key
+  @prev_color = deep_copy(processor.color_key) # Create new hash with deep copy of previous hash(@color_key)
   @prev_parts&.clear
-  p @prev_parts = processor.page_parts.uniq
+  @used_colors.clear
+  @color_key.clear
+  @prev_parts = processor.page_parts.uniq
+  # @color_key = processor.color_key
 end
 doc.write('show_char_boxes.pdf', optimize: true)
