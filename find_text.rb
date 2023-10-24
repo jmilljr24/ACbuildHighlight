@@ -36,21 +36,6 @@ class FindTextProcessor < HexaPDF::Content::Processor
     return unless @parts.include?(part) # do nothing if part is not on current page
 
     @page_parts << part
-    # @canvas.line_width = 1
-    # @canvas.stroke_color(224, 0, 0)
-    # # Polyline for transformed characters
-    # #boxes.each {|box| @canvas.polyline(*box.points).close_subpath.stroke}
-    # # Using rectangles is faster but not 100% correct
-    # boxes.each do |box|
-    #   x, y = *box.lower_left
-    #   tx, ty = *box.upper_right
-    #   @canvas.rectangle(x, y, tx - x, ty - y).stroke
-    # end
-
-    # @canvas.line_width = 0.5
-    # @canvas.stroke_color(0, 224, 0)
-    # @canvas.polyline(*boxes.lower_left, *boxes.lower_right,
-    #                  *boxes.upper_right, *boxes.upper_left).close_subpath.stroke
   end
   alias show_text_with_positioning show_text
 end
