@@ -7,9 +7,9 @@ require 'hexapdf'
 
 class ShowTextProcessor < HexaPDF::Content::Processor
   attr_accessor :page_number, :color_key, :prev_parts, :prev_color
-  attr_reader :boxes
+  attr_reader :boxes, :current_page_parts
 
-  def initialize(page, page_number, prev_parts = nil, prev_color = nil, color_key = {})
+  def initialize(page, page_number, prev_parts, prev_color = nil, color_key = {})
     super()
     # @text_list_arr = text_list
     @canvas = page.canvas(type: :overlay)
@@ -24,21 +24,28 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     @color_key['Page Number'] = @page_number
     @used_colors = []
     @boxes = []
-    @part = nil
+    @current_page_parts = []
   end
 
   def show_text(str)
     begin
-      p part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
+      part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
     rescue StandardError
       puts 'invalid string'
     end
     return unless @parts.include?(part) # do nothing if part is not on current page
 
-    # check if part was on previous page
-    @color_key[part] = @prev_color.delete(part) if !@prev_parts.nil? and @prev_parts.include?(part) # rubocop:disable Style/AndOr
+    @current_page_parts << part
 
-    key_color(part, str) unless @color_key.key?(part) # return if part/color pair is in hash
+    # check if part was on previous page
+    # @color_key[part] = @prev_color.delete(part) if !@prev_parts.nil? or @prev_parts.include?(part)
+
+    if !@prev_parts.nil? && @prev_parts.include?(part)
+      @color_key[part] = @prev_color.delete(part)
+      @prev_parts.delete(part)
+    else
+      key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
+    end
 
     @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
     # return if @boxes.string.empty?
@@ -96,12 +103,13 @@ doc = HexaPDF::Document.open('ocr.pdf')
 
 doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"
-  @prev_parts = @prev_color.keys unless @prev_color.nil?
+  # @prev_parts = @prev_color.keys unless @prev_color.nil?
   processor = ShowTextProcessor.new(page, index, @prev_parts, @prev_color)
-  # binding.pry
   page.process_contents(processor)
+  processor.text_highlight
   @prev_color&.clear #  clear if not nil
   @prev_color = processor.color_key
-  processor.text_highlight
+  @prev_parts&.clear
+  p @prev_parts = processor.current_page_parts.uniq
 end
 doc.write('show_char_boxes.pdf', optimize: true)
