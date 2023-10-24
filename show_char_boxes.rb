@@ -40,7 +40,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     # check if part was on previous page
     # @color_key[part] = @prev_color.delete(part) if !@prev_parts.nil? or @prev_parts.include?(part)
 
-    if !@prev_parts.nil? && @prev_parts.include?(part)
+    if @prev_parts&.include?(part)
       @color_key[part] = @prev_color.delete(part)
       @prev_parts.delete(part)
     else
@@ -72,7 +72,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     n.each_with_index do |color, index|
       next if index == 0
 
-      @used_colors << color[0]
+      @used_colors << color[0] unless @used_colors.include?(color[0])
     end
     color = @used_colors.empty? ? @colors.sample : (@colors - @used_colors).sample
     @color_key[part] = [color, str]
