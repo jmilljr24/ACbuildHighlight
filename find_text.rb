@@ -23,9 +23,16 @@ class FindTextProcessor < HexaPDF::Content::Processor
     rescue StandardError
       nil
     end
-    return unless @parts.include?(part) # do nothing if part is not on current page
+    if @parts.include?(part) # do nothing if part is not on current page
+      @page_parts << part
+    else
+      return if part.nil?
 
-    @page_parts << part
+      b = part.split(' ')
+      b.each do |word|
+        @page_parts << part if @parts.include?(word)
+      end
+    end
   end
   alias show_text_with_positioning show_text
 end
