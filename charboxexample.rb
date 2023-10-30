@@ -16,16 +16,24 @@
 require 'hexapdf'
 
 class ShowTextProcessor < HexaPDF::Content::Processor
+  attr_accessor :parts
+
   def initialize(page)
     super()
     @canvas = page.canvas(type: :overlay)
     @all_text = []
-    @parts = {}
+    @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
+                F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
+                F-1010C-R F-1010C-L F-1007-L]
+    @boxes = nil
+    @text = {}
   end
 
   def show_text(str)
+    # test = decode_text_with_positioning(['T', 8.44, 'ri', 4.049, 'm '])
     begin
-      @parts[str.select.with_index { |_, i| i.even? }.join] = str
+      part_number_string = str.select.with_index { |_, i| i.even? }.join
+      @text[part_number_string] = str
     rescue StandardError
       nil
     end
@@ -33,6 +41,18 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     return if boxes.string.empty?
 
     @all_text << boxes
+    return if part_number_string.nil?
+
+    b = part_number_string.split(' ')
+    part_number = nil
+    b.each do |word|
+      arr = [word]
+      part_number = @parts & arr
+    end
+    nil if part_number.nil?
+
+    # positions = part_number_string.enum_for(:scan, /#{part_number}/).map { Regexp.last_match.begin(0) }
+    # puts positions
   end
 
   def highlight
@@ -42,6 +62,10 @@ class ShowTextProcessor < HexaPDF::Content::Processor
       @canvas.polyline(*boxes.lower_left, *boxes.lower_right,
                        *boxes.upper_right, *boxes.upper_left).close_subpath.stroke
     end
+  end
+
+  def my_decode(str)
+    @boxes = decode_text_with_positioning(str)
   end
   alias show_text_with_positioning show_text
 end
