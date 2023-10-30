@@ -92,7 +92,8 @@ def deep_copy(o) # copy hash
   Marshal.load(Marshal.dump(o))
 end
 # doc = HexaPDF::Document.open(ARGV.shift)
-doc = HexaPDF::Document.open('06_10.pdf')
+# doc = HexaPDF::Document.open('06_10.pdf')
+doc = HexaPDF::Document.open('no_first_page.pdf')
 
 doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
   puts "Processing page #{index + 1}"

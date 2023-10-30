@@ -31,6 +31,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
 
   def show_text(str) # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
     # test = decode_text_with_positioning(['T', 8.44, 'ri', 4.049, 'm '])
+    p str
     begin
       part_number_string = str.select.with_index { |_, i| i.even? }.join
       @text[part_number_string] = str

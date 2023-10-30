@@ -1,5 +1,6 @@
 require 'hexapdf'
 require_relative 'parts_list'
+require_relative 'string_search'
 
 class FindTextProcessor < HexaPDF::Content::Processor
   include SectionParts
@@ -30,7 +31,8 @@ class FindTextProcessor < HexaPDF::Content::Processor
 
       b = part.split(' ')
       b.each do |word|
-        @page_parts << part if @parts.include?(word)
+        find_matching_part(str, word) if @parts.include?(word)
+        # @page_parts << part if @parts.include?(word)
       end
     end
   end
