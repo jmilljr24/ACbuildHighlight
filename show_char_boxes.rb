@@ -9,10 +9,10 @@ require_relative 'parts_list'
 
 class ShowTextProcessor < HexaPDF::Content::Processor
   include SectionParts
-  attr_accessor :page_number, :color_key, :prev_parts, :prev_color, :used_colors
+  attr_accessor :page_number, :color_key, :prev_parts, :prev_color, :used_colors, :text_box_parts
   attr_reader :boxes, :current_page_parts, :page_parts
 
-  def initialize(page, page_number, prev_parts, page_parts)
+  def initialize(page, page_number, prev_parts, page_parts, text_box_parts)
     super()
     @canvas = page.canvas(type: :overlay)
     # @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
@@ -28,9 +28,10 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     @boxes = []
     @page_parts = page_parts
     @current_page_parts = []
+    @text_box_parts = text_box_parts
   end
 
-  def show_text(str)
+  def show_text(str) # rubocop:disable Metrics/
     begin
       # part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
       part = str.select.with_index { |_, i| i.even? }.join
@@ -44,6 +45,13 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     end
     @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
     # return if @boxes.string.empty?
+    return unless @text_box_parts&.key?(part)
+
+    @text_box_parts[part].each do |h|
+      # next unless h[0] == str
+      index = h[1][0]
+      @boxes << decode_text_with_positioning(index)
+    end
   end
 
   def box_fill(boxes, color)
@@ -100,6 +108,7 @@ doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
   processor = FindTextProcessor.new(page)
   page.process_contents(processor)
   page_parts = processor.page_parts
+  text_box_parts = processor.text_box_parts
   both_pages = @prev_parts & page_parts
   until both_pages == false || both_pages.empty?
     both_pages.each_with_index do |b, i|
@@ -111,7 +120,7 @@ doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
       end
     end
   end
-  processor = ShowTextProcessor.new(page, index, @prev_parts, page_parts)
+  processor = ShowTextProcessor.new(page, index, @prev_parts, page_parts, text_box_parts)
   processor.used_colors = @used_colors
   processor.color_key = @color_key
   page.process_contents(processor)

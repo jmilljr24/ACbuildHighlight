@@ -5,7 +5,7 @@ require_relative 'string_search'
 class FindTextProcessor < HexaPDF::Content::Processor
   include SectionParts
 
-  attr_accessor :page_parts
+  attr_accessor :page_parts, :text_box_parts
 
   def initialize(page)
     super()
@@ -15,6 +15,7 @@ class FindTextProcessor < HexaPDF::Content::Processor
     #             F-1010C-R F-1010C-L F-1007-L]
     @parts = getParts
     @page_parts = []
+    @text_box_parts = {}
   end
 
   def show_text(str)
@@ -31,7 +32,7 @@ class FindTextProcessor < HexaPDF::Content::Processor
 
       b = part.split(' ')
       b.each do |word|
-        find_matching_part(str, word) if @parts.include?(word)
+        @text_box_parts[word] = find_matching_part(str, word) if @parts.include?(word)
         # @page_parts << part if @parts.include?(word)
       end
     end
