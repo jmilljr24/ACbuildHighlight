@@ -15,10 +15,10 @@ class FindTextProcessor < HexaPDF::Content::Processor
     #             F-1010C-R F-1010C-L F-1007-L]
     @parts = getParts
     @page_parts = []
-    @text_box_parts = {}
+    @text_box_parts = []
   end
 
-  def show_text(str)
+  def show_text(str) # rubocop:disable Metrics/
     begin
       # part = str.scan(/[-\w+]/).join # Converts utf-8 str to text string
       part = str.select.with_index { |_, i| i.even? }.join
@@ -30,11 +30,19 @@ class FindTextProcessor < HexaPDF::Content::Processor
     else
       return if part.nil?
 
-      b = part.split(' ')
-      b.each do |word|
-        @text_box_parts[word] = find_matching_part(str, word) if @parts.include?(word)
-        # @page_parts << part if @parts.include?(word)
+      @parts.each do |part_number|
+        unless part.enum_for(:scan, /#{part_number}/).map { Regexp.last_match.begin(0) }.empty?
+          @page_parts << part_number # just the part number is added
+          @text_box_parts << [part_number, part] # this is a text line string containing the part
+        end
       end
+      # return if part.nil?
+
+      # b = part.split(' ')
+      # b.each do |word|
+      #   @text_box_parts[word] = find_matching_part(str, word) if @parts.include?(word)
+      #   # @page_parts << part if @parts.include?(word)
+      # end
     end
   end
   alias show_text_with_positioning show_text

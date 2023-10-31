@@ -38,20 +38,34 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     rescue StandardError
       nil
     end
-    return unless @page_parts.include?(part) # do nothing if part is not on current page
+    return unless @page_parts.include?(part) || # do nothing if part is not on current page
+                  @text_box_parts&.flat_map do |map|
+                    map[1]
+                  end&.include?(part)
 
-    unless @color_key.key?(part)
-      key_color(part, str) # unless @color_key.key?(part) # return if part/color pair is in hash
+    # if @color_key.key?(part)
+    if @text_box_parts&.flat_map { |map| map[1] }&.include?(part)
+    # do stuff
+
+    else
+      unless @color_key.key?(part)
+        # do other stuff
+        key_color(part, str)
+      end
+      @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
+
     end
-    @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
+
     # return if @boxes.string.empty?
-    return unless @text_box_parts&.key?(part)
+    nil unless @text_box_parts&.flat_map { |map| map[0] }&.include?(part) # do nothing if part is not on current page
 
-    @text_box_parts[part].each do |h|
-      # next unless h[0] == str
-      index = h[1][0]
-      @boxes << decode_text_with_positioning(index)
-    end
+    # nil unless @text_box_parts&.key?(part) # value?
+
+    # @text_box_parts[part].each do |h|
+    #   # next unless h[0] == str
+    #   index = h[1][0]
+    #   @boxes << decode_text_with_positioning(index)
+    # end
   end
 
   def box_fill(boxes, color)
@@ -67,6 +81,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     n = @color_key.values
     n.each_with_index do |color, index|
       next if index == 0
+      next if color.nil?
 
       @used_colors << color[0] unless @used_colors.include?(color[0])
     end
