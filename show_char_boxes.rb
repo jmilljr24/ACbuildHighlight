@@ -45,14 +45,34 @@ class ShowTextProcessor < HexaPDF::Content::Processor
 
     # if @color_key.key?(part)
     if @text_box_parts&.flat_map { |map| map[1] }&.include?(part)
-    # do stuff
+      # do stuff
+      @parts.each do |part_number|
+        color = nil
+        positions = part.enum_for(:scan, /#{part_number}/).map { Regexp.last_match.begin(0) }
+        next if positions.empty?
 
+        if @color_key.key?(part_number)
+          color = @color_key[part_number]
+          @color_key[part_number] = color
+        else
+          key_color(part_number, nil)
+        end
+        boxes = decode_text_with_positioning(str)
+
+        @text_box = [boxes.cut(positions[0], (positions[0] + part_number.length))]
+        @text_box[0]&.each do |box|
+          x, y = *box.lower_left
+          tx, ty = *box.upper_right
+          @canvas.fill_color(@color_key[part_number]).opacity(fill_alpha: 0.5)
+                 .rectangle(x, y, tx - x, ty - y).fill
+        end
+      end
     else
       unless @color_key.key?(part)
         # do other stuff
         key_color(part, str)
       end
-      @boxes << decode_text_with_positioning(@color_key.dig(part, 1)) # set boxes to str in color hash
+      @boxes << decode_text_with_positioning(str) # set boxes to str in color hash
 
     end
 
@@ -77,16 +97,16 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     end
   end
 
-  def key_color(part, str)
+  def key_color(part, _str)
     n = @color_key.values
     n.each_with_index do |color, index|
       next if index == 0
       next if color.nil?
 
-      @used_colors << color[0] unless @used_colors.include?(color[0])
+      @used_colors << color[0] unless @used_colors.include?(color)
     end
     color = @used_colors.empty? ? @colors.sample : (@colors - @used_colors).sample
-    @color_key[part] = [color, str]
+    @color_key[part] = color
   end
 
   def text_highlight
@@ -98,7 +118,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
         i += 1
       end
       begin
-        box_fill(text_box, @color_key.dig(part.join, 0))
+        box_fill(text_box, @color_key.dig(part.join))
       rescue StandardError
         box_fill(text_box, 'yellow') # set yellow if all colors used already
       end
@@ -128,7 +148,7 @@ doc.pages.each_with_index do |page, index| # rubocop:disable Metrics/BlockLength
   until both_pages == false || both_pages.empty?
     both_pages.each_with_index do |b, i|
       @color_key[b] = @prev_color[b]
-      @used_colors << @color_key.dig(b, 0)
+      @used_colors << @color_key.dig(b)
       if i == both_pages.count - 1
         both_pages.clear
         @prev_parts.clear
