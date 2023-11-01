@@ -2,7 +2,7 @@
 # Usage:
 # : `ruby show_char_boxes.rb INPUT.PDF`
 #
-require 'pry-byebug'
+# require 'pry-byebug'
 require 'hexapdf'
 require_relative 'find_text'
 require_relative 'parts_list'
@@ -58,13 +58,14 @@ class ShowTextProcessor < HexaPDF::Content::Processor
           key_color(part_number, nil)
         end
         boxes = decode_text_with_positioning(str)
-
-        @text_box = [boxes.cut(positions[0], (positions[0] + part_number.length))]
-        @text_box[0]&.each do |box|
-          x, y = *box.lower_left
-          tx, ty = *box.upper_right
-          @canvas.fill_color(@color_key[part_number]).opacity(fill_alpha: 0.5)
-                 .rectangle(x, y, tx - x, ty - y).fill
+        positions.each do |pos|
+          @text_box = [boxes.cut(pos, (pos + part_number.length))]
+          @text_box[0]&.each do |box|
+            x, y = *box.lower_left
+            tx, ty = *box.upper_right
+            @canvas.fill_color(@color_key[part_number]).opacity(fill_alpha: 0.5)
+                   .rectangle(x, y, tx - x, ty - y).fill
+          end
         end
       end
     else
@@ -77,7 +78,7 @@ class ShowTextProcessor < HexaPDF::Content::Processor
     end
 
     # return if @boxes.string.empty?
-    nil unless @text_box_parts&.flat_map { |map| map[0] }&.include?(part) # do nothing if part is not on current page
+    # nil unless @text_box_parts&.flat_map { |map| map[0] }&.include?(part) # do nothing if part is not on current page
 
     # nil unless @text_box_parts&.key?(part) # value?
 
