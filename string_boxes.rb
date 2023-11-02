@@ -4,22 +4,23 @@ require_relative 'parts_list'
 class StringBoxesProcessor < HexaPDF::Content::Processor
   include SectionParts
 
-  attr_accessor :page_parts, :text_box_parts, :str_boxes, :used_colors
+  attr_accessor :page_parts, :text_box_parts, :str_boxes, :used_colors, :current_page_parts, :color_key
 
-  def initialize(page, used_colors = [])
+  def initialize(page, color_key = {})
     super()
     @canvas = page.canvas(type: :overlay)
 
     @colors = %w[cyan deeppink olivedrab red blue orange darksalmon darkslateblue lime tomato hp-teal-dark2 springgreen
                  goldenrod]
-    @used_colors = used_colors
+    @used_colors = []
     @parts = getParts
     @str_boxes = {}
     @page_parts = {}
-    @color_key = {}
+    @color_key = color_key
+    @current_page_parts = []
   end
 
-  def show_text(str) # /
+  def show_text(str)
     @str_boxes[str] = decode_text_with_positioning(str)
   end
   alias show_text_with_positioning show_text
@@ -41,12 +42,14 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
           @page_parts[string][part_number] = [] unless @page_parts[string].key?(part_number)
 
           @page_parts[string][part_number].push(value.cut(pos, (pos + part_number.length)))
+          @current_page_parts << part_number
         end
       end
     end
   end
 
-  def assign_color(list)
+  def assign_color(list, both_pages)
+    @color_key.keep_if { |key, _value| both_pages.include?(key) }
     p = []
 
     list.each do |_key, value|
@@ -63,7 +66,10 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
 
         @used_colors << color unless @used_colors.include?(color)
       end
+      next if @color_key.has_key?(part)
+
       color = @used_colors.empty? ? @colors.sample : (@colors - @used_colors).sample
+
       @color_key[part] = color
     end
   end
@@ -91,16 +97,27 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
   end
 end
 
+@color_key = {}
+@prev_page_parts = nil
 doc = HexaPDF::Document.open('no_first_page.pdf')
 
 doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"
-  processor = StringBoxesProcessor.new(page)
+  processor = if index == 0
+                StringBoxesProcessor.new(page)
+              else
+                StringBoxesProcessor.new(page, @color_key)
+              end
   page.process_contents(processor)
   str_boxes = processor.str_boxes
   processor.match(str_boxes)
   page_parts = processor.page_parts
-  processor.assign_color(page_parts)
+
+  both_pages = @prev_page_parts & processor.current_page_parts.uniq
+
+  processor.assign_color(page_parts, both_pages)
   processor.color(page_parts)
+  @color_key = processor.color_key
+  @prev_page_parts = processor.current_page_parts.uniq
 end
 doc.write('show_char_boxes.pdf', optimize: true)
