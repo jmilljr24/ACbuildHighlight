@@ -1,6 +1,5 @@
 require 'hexapdf'
 require_relative 'parts_list'
-# require_relative 'string_search'
 
 class StringBoxesProcessor < HexaPDF::Content::Processor
   include SectionParts
@@ -10,9 +9,7 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
   def initialize(page, used_colors = [])
     super()
     @canvas = page.canvas(type: :overlay)
-    # @parts = %w[F-1006C F-1012A F-1006D F-1006B F-1032L F-1011C F-1029-L F-1010C
-    #             F-1010A F-1011E F-1012E F-1010C F-1010 F-1011 F-1011A
-    #             F-1010C-R F-1010C-L F-1007-L]
+
     @colors = %w[cyan darkgreen gold deeppink olivedrab paleturquoise red green blue orange]
     @used_colors = used_colors
     @parts = getParts
@@ -33,10 +30,7 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
       rescue StandardError
         nil
       end
-      # if @parts.include?(part)
-      #   @page_parts[string] = [] unless @page_parts.key?(string)
-      #   @page_parts[string].push(value)
-      # else
+
       @parts.each do |part_number|
         positions = part&.enum_for(:scan, /#{part_number}/)&.map { Regexp.last_match.begin(0) }
         next if positions.nil? || positions.empty?
@@ -48,28 +42,9 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
           @page_parts[string][part_number].push(value.cut(pos, (pos + part_number.length)))
         end
       end
-      # end
     end
   end
 
-  #   def assign_color(list)
-  #     p = []
-  #
-  #     list.each do |_key, value|
-  #       value.each do |k, _v|
-  #         p << k
-  #       end
-  #     end
-  #     unique_parts = p.uniq
-  #     unique_parts.each do |part|
-  #       @colors.each do |color|
-  #         next if @color_key.values.include?(color)
-  #
-  #         break @color_key[part] = color
-  #       end
-  #     end
-  #   end
-  #
   def assign_color(list)
     p = []
 
