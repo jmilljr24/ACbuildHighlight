@@ -10,7 +10,8 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
     super()
     @canvas = page.canvas(type: :overlay)
 
-    @colors = %w[cyan darkgreen gold deeppink olivedrab paleturquoise red green blue orange]
+    @colors = %w[cyan deeppink olivedrab red blue orange darksalmon darkslateblue lime tomato hp-teal-dark2 springgreen
+                 goldenrod]
     @used_colors = used_colors
     @parts = getParts
     @str_boxes = {}
