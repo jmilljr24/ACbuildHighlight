@@ -1,5 +1,8 @@
 require 'hexapdf'
 require_relative 'parts_list'
+# Usage:
+# : `ruby string_boxes.rb INPUT.PDF`
+#
 
 class StringBoxesProcessor < HexaPDF::Content::Processor
   include SectionParts
@@ -99,7 +102,9 @@ end
 
 @color_key = {}
 @prev_page_parts = nil
-doc = HexaPDF::Document.open('no_first_page.pdf')
+
+# doc = HexaPDF::Document.open(ARGV.shift)
+doc = HexaPDF::Document.open('06_10.pdf')
 
 doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"

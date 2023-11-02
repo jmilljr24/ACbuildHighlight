@@ -6,3 +6,9 @@ module SectionParts
   file.each { |c| parts << c[0] }
   define_method(:getParts) { parts }
 end
+
+# documenting for later use
+# copy hash or array without modifying the original
+def deep_copy(o)
+  Marshal.load(Marshal.dump(o))
+end
