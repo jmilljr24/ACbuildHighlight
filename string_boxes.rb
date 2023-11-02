@@ -104,8 +104,8 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
             c.each do |box|
               x, y = *box.lower_left
               tx, ty = *box.upper_right
-              # color = @color_key.dig(a[0]).nil? ? 'yellow' : @color_key.dig(a[0])
-              @canvas.fill_color('yellow').opacity(fill_alpha: 0.5)
+              color = @color_key.dig(a[0]).nil? ? 'yellow' : @color_key.dig(a[0])
+              @canvas.fill_color(color).opacity(fill_alpha: 0.5)
                      .rectangle(x, y, tx - x, ty - y).fill
             end
           end
@@ -124,7 +124,7 @@ doc.pages.each_with_index do |page, index|
   str_boxes = processor.str_boxes
   processor.match(str_boxes)
   page_parts = processor.page_parts
-  # processor.assign_color(page_parts)
+  processor.assign_color(page_parts)
   processor.color(page_parts)
 end
 doc.write('show_char_boxes.pdf', optimize: true)
