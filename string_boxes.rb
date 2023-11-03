@@ -14,7 +14,7 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
     @canvas = page.canvas(type: :overlay)
 
     @colors = %w[cyan deeppink olivedrab red blue orange darksalmon darkslateblue lime tomato hp-teal-dark2 springgreen
-                 goldenrod]
+                 goldenrod magenta maroon]
     @used_colors = []
     @parts = getParts
     @str_boxes = {}
@@ -37,7 +37,10 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
       end
 
       @parts.each do |part_number|
-        positions = part&.enum_for(:scan, /#{part_number}/)&.map { Regexp.last_match.begin(0) }
+        # positions = part&.enum_for(:scan, /#{part_number}/)&.map {
+        # Regexp.last_match.begin(0) }
+        positions = part&.enum_for(:match, part_number)&.map { Regexp.last_match.begin(0) }
+
         next if positions.nil? || positions.empty?
 
         positions.each do |pos|
@@ -103,8 +106,8 @@ end
 @color_key = {}
 @prev_page_parts = nil
 
-# doc = HexaPDF::Document.open(ARGV.shift)
-doc = HexaPDF::Document.open('06_10.pdf')
+doc = HexaPDF::Document.open(ARGV.shift)
+# doc = HexaPDF::Document.open('06_10.pdf')
 
 doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"
