@@ -51,6 +51,23 @@ class StringBoxesProcessor < HexaPDF::Content::Processor
           @current_page_parts << part_number
         end
       end
+
+      left_part = part&.enum_for(:match, '-L')&.map { Regexp.last_match.begin(0) }
+      left_part&.each do |pos|
+        boxes = value.cut(pos, (pos + 2))
+        @canvas.line_width = 2.0
+        @canvas.stroke_color(150, 20, 20)
+        @canvas.polyline(*boxes[0].lower_left, *boxes[1].lower_right,
+                         *boxes[1].upper_right, *boxes[0].upper_left).close_subpath.stroke
+      end
+      right_part = part&.enum_for(:match, '-R')&.map { Regexp.last_match.begin(0) }
+      right_part&.each do |pos|
+        boxes = value.cut(pos, (pos + 2))
+        @canvas.line_width = 2.0
+        @canvas.stroke_color(30, 100, 30)
+        @canvas.polyline(*boxes[0].lower_left, *boxes[1].lower_right,
+                         *boxes[1].upper_right, *boxes[0].upper_left).close_subpath.stroke
+      end
     end
   end
 
