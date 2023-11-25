@@ -123,8 +123,8 @@ end
 @color_key = {}
 @prev_page_parts = nil
 
-doc = HexaPDF::Document.open(ARGV.shift)
-# doc = HexaPDF::Document.open('06_10.pdf')
+# doc = HexaPDF::Document.open(ARGV.shift)
+doc = HexaPDF::Document.open('06_10.pdf')
 
 doc.pages.each_with_index do |page, index|
   puts "Processing page #{index + 1}"
